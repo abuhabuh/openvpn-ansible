@@ -1,0 +1,99 @@
+---
+# first install python
+- hosts: openvpn
+  user: ubuntu
+  gather_facts: False
+  tasks:
+    - name: install python 2 so that ansible works
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+      become: yes
+
+- hosts: openvpn
+  user: ubuntu
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: yes
+    - name: Install openvpn and friends
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - openvpn
+        - easy-rsa
+      become: yes
+    - name: Create dummy dir to unarchive app - archive has .. relative dir
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0600
+      with_items:
+        - "{{ openvpn_dir }}/keys"
+        - "{{ openvpn_dir }}/config"
+        - "{{ log_dir }}"
+      become: yes
+    - name: Lay down config files
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      become: yes
+      with_items:
+        - { src: client.conf.j2, dest: "{{ openvpn_dir }}/config/client.conf" }
+        - { src: server.conf.j2, dest: "{{ openvpn_dir }}/config/server.conf" }
+        - { src: easy_rsa_vars.j2, dest: "{{ easy_rsa_dir }}/vars" }
+        - { src: openvpn.service.j2, dest: "/etc/systemd/system/openvpn.service" }
+    - name: Lay down new user gen script
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: 0744
+      with_items:
+        - { src: user_gen.sh.j2, dest: "/home/ubuntu/user_gen.sh" }
+    - name: Build easy-rsa things - may take a while...
+      shell: "{{ item }}"
+      with_items:
+        - ./clean-all
+        - ./build-dh
+        - ./pkitool --initca
+        - ./pkitool --server server
+      args:
+        chdir: "{{ easy_rsa_dir }}"
+        executable: /bin/bash
+        creates: "{{ openvpn_dir }}/keys/01.pem"
+      become: yes
+      environment:
+        OPENSSL: openssl
+        PKCS11TOOL: pkcs11-tool
+        GREP: grep
+        KEY_CONFIG: /usr/share/easy-rsa/openssl-1.0.0.cnf
+        KEY_DIR: "{{ openvpn_dir }}/keys"
+        PKCS11_MODULE_PATH: dummy
+        PKCS11_PIN: dummy
+        KEY_SIZE: 2048
+        CA_EXPIRE: 3650
+        KEY_EXPIRE: 3650
+        KEY_COUNTRY: "{{ country }}"
+        KEY_PROVINCE: "{{ province }}"
+        KEY_CITY: "{{ city }}"
+        KEY_ORG: "{{ org }}"
+        KEY_EMAIL: "{{ email }}"
+        KEY_OU: "{{ ou }}"
+        KEY_NAME: EasyRSA
+      register: output
+    - name: Turn on ip forwarding
+      shell: echo 1 > /proc/sys/net/ipv4/ip_forward
+      become: yes
+    - name: Start openvpn server
+      systemd:
+        state: stopped
+        name: openvpn
+        daemon_reload: yes
+      become: yes
+    - name: Start openvpn server
+      systemd:
+        state: started
+        name: openvpn
+        daemon_reload: yes
+      become: yes

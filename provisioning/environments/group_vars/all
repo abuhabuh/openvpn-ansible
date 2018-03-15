@@ -1,0 +1,25 @@
+---
+openvpn_dir: /etc/openvpn
+log_dir: /var/log/openvpn
+easy_rsa_dir: /usr/share/easy-rsa
+### Configure the following variables to spec
+country: US
+province: NY
+city: NewYork
+org: Company
+# email of primary poc for VPN things
+email: john@john.com
+ou: engineering
+# Subnet and subnet mask that you want VPN clients to take addresses from
+# Under defauls here, clients will have addresses of form 10.103.0.*
+network_subnet: 10.103.0.0
+network_mask: 255.255.255.0
+# access_networks are other subnets behind the VPN server you want the client
+# to be able to connect to. For each subnet, an entry will be made in the
+# client's routing table (after connecting to VPN) directing that ip range to
+# the VPN server
+access_networks:
+- domain: 10.0.0.0
+  mask: 255.255.0.0
+# IP of the VPN server. This should ideally be a static ip
+vpn_server_ip: 11.111.111.11

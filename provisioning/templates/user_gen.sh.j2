@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+  then
+    echo "usage: sudo ./user_gen.sh john@john.com john"
+    exit
+else
+  # remove the "database" entry for user
+  sed -i '/CN=client-'"$2"'/d' /etc/openvpn/keys/index.txt
+  # source vars for configuring keygen scripts
+  source /usr/share/easy-rsa/vars
+  # set email addr
+  export KEY_EMAIL="$1"
+  # generate client creds (username can be anything -- not permanent)
+  /usr/share/easy-rsa/pkitool client-$2
+  echo "keys generated at /etc/openvpn/keys"
+  exit
+fi
