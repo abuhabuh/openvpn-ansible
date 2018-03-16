@@ -9,3 +9,6 @@ Provisions an OpenVPN server.
 # Config
 
 Settings for VPN can be configured in environments/group_vars/all variable file
+
+# TODO
+* write about how to provision a server in AWS
