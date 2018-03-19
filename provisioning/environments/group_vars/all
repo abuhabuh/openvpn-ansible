@@ -23,3 +23,6 @@ access_networks:
   mask: 255.255.0.0
 # IP of the VPN server. This should ideally be a static ip
 vpn_server_ip: 11.111.111.11
+# cipher used by openVPN server:
+# https://community.openvpn.net/openvpn/wiki/SWEET32
+vpn_server_cipher: AES-256-CBC

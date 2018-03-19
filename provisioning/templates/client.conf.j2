@@ -110,7 +110,7 @@ remote-cert-tls server
 # Select a cryptographic cipher.
 # If the cipher option is used on the server
 # then you must also specify it here.
-;cipher x
+cipher {{ vpn_server_cipher }}
 
 # Enable compression on the VPN link.
 # Don't enable this unless it is also
